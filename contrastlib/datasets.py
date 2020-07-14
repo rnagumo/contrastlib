@@ -112,7 +112,7 @@ class SequentialMNIST(datasets.MNIST):
         """
 
         # Current number
-        n = torch.randint(0, 10, (1,)).item()
+        n = random.randint(0, 9)
 
         indices = []
         for _ in range(self.seq_len):
