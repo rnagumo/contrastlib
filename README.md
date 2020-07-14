@@ -12,7 +12,6 @@ Contrastive learning in PyTorch.
 
 Additional requirements for example codes.
 
-* matplotlib == 3.2.2
 * tqdm == 4.46.1
 * tensorboardX == 2.0
 
@@ -44,7 +43,7 @@ docker run --gpus all -it contrastlib bash
 Install other requirements for example code.
 
 ```bash
-pip3 install matplotlib==3.2.2 tqdm==4.46.1 tensorboardX==2.0
+pip3 install tqdm==4.46.1 tensorboardX==2.0
 ```
 
 # Experiments
