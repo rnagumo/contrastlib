@@ -74,7 +74,7 @@ class DenstiyRatioEstimator(nn.Module):
 
         Args:
             z (torch.Tensor): Latent representations, size `(b, l, z)`.
-            c (torch.Tensor): Context representations, size `(b, l, c)`.
+            c (torch.Tensor): Context representations, size `(b, c)`.
 
         Returns:
             r (torch.Tensor): Density ratio, size `(b, l)`.
@@ -91,8 +91,7 @@ class DenstiyRatioEstimator(nn.Module):
         # Calculate
         r = z.new_zeros((batch, seq_len))
         for t in range(seq_len):
-            r[:, t] = (
-                z[:, t].matmul(self.trans[t].matmul(c[:, t].t()))).sum(-1)
+            r[:, t] = (z[:, t] @ self.trans[t] * c).sum(-1)
 
         return r.exp()
 
@@ -177,10 +176,8 @@ class ContrastivePredictiveModel(BaseModel):
         # Calculate log density ratio for positive and negative samples
         l_n = x_p.new_zeros((batch,))
         for t in range(seq_len - 1):
-            r_p = self.estimator(z_p[:, t:t + self.predictive_steps],
-                                 c[:, t:t + self.predictive_steps])
-            r_n = self.estimator(z_n[:, t:t + self.predictive_steps],
-                                 c[:, t:t + self.predictive_steps])
+            r_p = self.estimator(z_p[:, t:t + self.predictive_steps], c[:, t])
+            r_n = self.estimator(z_n[:, t:t + self.predictive_steps], c[:, t])
             l_n += (r_p.log() - r_n.log()).sum(1)
 
         loss = -l_n.mean()
