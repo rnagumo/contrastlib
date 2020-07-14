@@ -1,0 +1,17 @@
+{
+    "cpc_params": {
+        "in_channels": 3,
+        "z_dim": 10,
+        "c_dim": 10,
+        "predictive_steps": 2
+    },
+    "dataset_params": {
+        "data_num": 1000,
+        "seq_len": 20,
+        "color": true,
+        "image_name": "china.jpg"
+    },
+    "optimizer_params": {},
+    "max_grad_value": 5.0,
+    "max_grad_norm": 100.0
+}
