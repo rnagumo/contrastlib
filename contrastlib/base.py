@@ -13,10 +13,10 @@ class BaseModel(nn.Module):
         """Encodes observations to context `c`.
 
         Args:
-            x (torch.Tensor): Observations, size `(b, l, c, h, w)`.
+            x (torch.Tensor): Observations, size `(b, c, h, w)`.
 
         Returns:
-            c (torch.Tensor): Encoded context, size `(b, l, d)`.
+            c (torch.Tensor): Encoded context, size `(b, d)`.
         """
 
         raise NotImplementedError
@@ -25,8 +25,8 @@ class BaseModel(nn.Module):
         """Loss function.
 
         Args:
-            x_p (torch.Tensor): Positive observations, size `(b, l, c, h, w)`.
-            x_n (torch.Tensor): Negative observations, size `(b, l, c, h, w)`.
+            x_p (torch.Tensor): Positive observations, size `(b, c, h, w)`.
+            x_n (torch.Tensor): Negative observations, size `(b, c, h, w)`.
 
         Returns:
             loss_dict (dict of [str, torch.Tensor]): Dict of lossses.

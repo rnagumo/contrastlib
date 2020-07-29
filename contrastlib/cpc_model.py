@@ -1,5 +1,5 @@
 
-"""Contrastive Predictive Coding."""
+"""Contrastive Predictive Coding for sequential data."""
 
 from typing import Dict
 
@@ -67,7 +67,7 @@ class DenstiyRatioEstimator(nn.Module):
         super().__init__()
 
         self.predictive_steps = predictive_steps
-        self.trans = nn.Parameter(torch.zeros(predictive_steps, z_dim, c_dim))
+        self.trans = nn.Parameter(torch.randn(predictive_steps, z_dim, c_dim))
 
     def forward(self, z: Tensor, c: Tensor) -> Tensor:
         """Computes density ratio.
@@ -97,7 +97,7 @@ class DenstiyRatioEstimator(nn.Module):
 
 
 class ContrastivePredictiveModel(BaseModel):
-    """Contrastive Predictive Coding.
+    """Contrastive Predictive Coding class for sequential data.
 
     Args:
         in_channels (int, optional): Channel size of inputs.
@@ -126,7 +126,13 @@ class ContrastivePredictiveModel(BaseModel):
 
         Returns:
             c (torch.Tensor): Encoded context, size `(b, l, d)`.
+
+        Raises:
+            ValueError: If data dimension is not 5.
         """
+
+        if x.dim() != 5:
+            raise ValueError("Data size must be (b, l, c, h, w).")
 
         # Data size
         batch, seq_len, *_ = x.size()
@@ -154,7 +160,13 @@ class ContrastivePredictiveModel(BaseModel):
 
         Returns:
             loss_dict (dict of [str, torch.Tensor]): Dict of lossses.
+
+        Raises:
+            ValueError: If data dimension is not 5.
         """
+
+        if x_p.dim() != 5 or x_n.dim() != 5:
+            raise ValueError("Data size must be (b, l, c, h, w).")
 
         # Data size
         batch, seq_len, *_ = x_p.size()
@@ -174,12 +186,12 @@ class ContrastivePredictiveModel(BaseModel):
             c[:, t] = c_t
 
         # Calculate log density ratio for positive and negative samples
-        l_n = x_p.new_zeros((batch,))
+        loss = x_p.new_zeros((batch,))
         for t in range(seq_len - 1):
             r_p = self.estimator(z_p[:, t:t + self.predictive_steps], c[:, t])
             r_n = self.estimator(z_n[:, t:t + self.predictive_steps], c[:, t])
-            l_n += (r_p.log() - r_n.log()).sum(1)
+            loss += (r_p.log() - r_n.log()).sum(1)
 
-        loss = -l_n.mean()
+        loss = -loss.mean()
 
         return {"loss": loss}
