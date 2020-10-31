@@ -13,11 +13,7 @@ RUN apt-get update \
 
 # Copy package
 WORKDIR /app
-COPY bin/ bin/
-COPY examples/ examples/
-COPY contrastlib/ contrastlib/
-COPY tests/ tests/
-COPY setup.py setup.py
+COPY . .
 
 # Install package
 RUN pip3 install --upgrade pip
