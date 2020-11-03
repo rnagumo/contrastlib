@@ -1,6 +1,3 @@
-
-"""Base class for contrastive learning."""
-
 from typing import Dict
 
 from torch import Tensor, nn

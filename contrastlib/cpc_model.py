@@ -1,12 +1,9 @@
-
-"""Contrastive Predictive Coding for sequential data."""
-
 from typing import Dict
 
 import torch
 from torch import Tensor, nn
 
-from .base import BaseModel
+from contrastlib.base import BaseModel
 
 
 class Encoder(nn.Module):
@@ -17,7 +14,7 @@ class Encoder(nn.Module):
         z_dim (int): Dimension size of latents.
     """
 
-    def __init__(self, in_channels: int, z_dim: int):
+    def __init__(self, in_channels: int, z_dim: int) -> None:
         super().__init__()
 
         self.conv = nn.Sequential(
@@ -63,7 +60,7 @@ class DenstiyRatioEstimator(nn.Module):
         predictive_steps (int): Number of time steps for training.
     """
 
-    def __init__(self, z_dim: int, c_dim: int, predictive_steps: int):
+    def __init__(self, z_dim: int, c_dim: int, predictive_steps: int) -> None:
         super().__init__()
 
         self.predictive_steps = predictive_steps
@@ -80,15 +77,13 @@ class DenstiyRatioEstimator(nn.Module):
             r (torch.Tensor): Density ratio, size `(b, l)`.
         """
 
-        # Dataset size
         batch, seq_len, *_ = z.size()
-
         if seq_len > self.predictive_steps:
             raise ValueError(
                 f"Given sequence length ({seq_len}) must be equal or smaller "
-                f"than predictive steps ({self.predictive_steps}).")
+                f"than predictive steps ({self.predictive_steps})."
+            )
 
-        # Calculate
         r = z.new_zeros((batch, seq_len))
         for t in range(seq_len):
             r[:, t] = (z[:, t] @ self.trans[t] * c).sum(-1)
@@ -106,8 +101,9 @@ class ContrastivePredictiveModel(BaseModel):
         predictive_steps (int, optional): Number of time steps for training.
     """
 
-    def __init__(self, in_channels: int = 3, z_dim: int = 10, c_dim: int = 10,
-                 predictive_steps: int = 2):
+    def __init__(
+        self, in_channels: int = 3, z_dim: int = 10, c_dim: int = 10, predictive_steps: int = 2
+    ) -> None:
         super().__init__()
 
         self.z_dim = z_dim
@@ -119,25 +115,12 @@ class ContrastivePredictiveModel(BaseModel):
         self.estimator = DenstiyRatioEstimator(z_dim, c_dim, predictive_steps)
 
     def forward(self, x: Tensor) -> Tensor:
-        """Encodes observations to context `c`.
-
-        Args:
-            x (torch.Tensor): Observations, size `(b, l, c, h, w)`.
-
-        Returns:
-            c (torch.Tensor): Encoded context, size `(b, l, d)`.
-
-        Raises:
-            ValueError: If data dimension is not 5.
-        """
 
         if x.dim() != 5:
             raise ValueError("Data size must be (b, l, c, h, w).")
 
-        # Data size
         batch, seq_len, *_ = x.size()
 
-        # Encode observations
         z_p = x.new_zeros((batch, seq_len, self.z_dim))
         for t in range(seq_len):
             z_p[:, t] = self.encoder(x[:, t])
@@ -152,26 +135,12 @@ class ContrastivePredictiveModel(BaseModel):
         return c
 
     def loss_func(self, x_p: Tensor, x_n: Tensor) -> Dict[str, Tensor]:
-        """Loss function.
-
-        Args:
-            x_p (torch.Tensor): Positive observations, size `(b, l, c, h, w)`.
-            x_n (torch.Tensor): Negative observations, size `(b, l, c, h, w)`.
-
-        Returns:
-            loss_dict (dict of [str, torch.Tensor]): Dict of lossses.
-
-        Raises:
-            ValueError: If data dimension is not 5.
-        """
 
         if x_p.dim() != 5 or x_n.dim() != 5:
             raise ValueError("Data size must be (b, l, c, h, w).")
 
-        # Data size
         batch, seq_len, *_ = x_p.size()
 
-        # Encode observations
         z_p = x_p.new_zeros((batch, seq_len, self.z_dim))
         z_n = x_n.new_zeros((batch, seq_len, self.z_dim))
         for t in range(seq_len):
@@ -188,8 +157,8 @@ class ContrastivePredictiveModel(BaseModel):
         # Calculate log density ratio for positive and negative samples
         loss = x_p.new_zeros((batch,))
         for t in range(seq_len - 1):
-            r_p = self.estimator(z_p[:, t:t + self.predictive_steps], c[:, t])
-            r_n = self.estimator(z_n[:, t:t + self.predictive_steps], c[:, t])
+            r_p = self.estimator(z_p[:, t : t + self.predictive_steps], c[:, t])
+            r_n = self.estimator(z_n[:, t : t + self.predictive_steps], c[:, t])
             loss += (r_p.log() - r_n.log()).sum(1)
 
         loss = -loss.mean()

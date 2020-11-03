@@ -1,4 +1,3 @@
-
 """Trainer class."""
 
 from typing import Dict, DefaultDict, Union, Optional
@@ -83,8 +82,7 @@ class Trainer:
         exist.
         """
 
-        self.logdir = pathlib.Path(
-            self.config.logdir, time.strftime("%Y%m%d%H%M"))
+        self.logdir = pathlib.Path(self.config.logdir, time.strftime("%Y%m%d%H%M"))
         self.logdir.mkdir(parents=True, exist_ok=True)
 
     def init_logger(self) -> None:
@@ -97,16 +95,18 @@ class Trainer:
         # Set stream handler (console)
         sh = logging.StreamHandler()
         sh.setLevel(logging.INFO)
-        sh_fmt = logging.Formatter("%(asctime)s - %(module)s.%(funcName)s "
-                                   "- %(levelname)s : %(message)s")
+        sh_fmt = logging.Formatter(
+            "%(asctime)s - %(module)s.%(funcName)s " "- %(levelname)s : %(message)s"
+        )
         sh.setFormatter(sh_fmt)
         logger.addHandler(sh)
 
         # Set file handler (log file)
         fh = logging.FileHandler(filename=self.logdir / "training.log")
         fh.setLevel(logging.DEBUG)
-        fh_fmt = logging.Formatter("%(asctime)s - %(module)s.%(funcName)s "
-                                   "- %(levelname)s : %(message)s")
+        fh_fmt = logging.Formatter(
+            "%(asctime)s - %(module)s.%(funcName)s " "- %(levelname)s : %(message)s"
+        )
         fh.setFormatter(fh_fmt)
         logger.addHandler(fh)
 
@@ -124,17 +124,33 @@ class Trainer:
 
         # Dataset
         train_data_pos = contrastlib.SequentialMNIST(
-            ordered=True, root=self.config.data_dir, train=True,
-            download=True, **self.config.dataset_params)
+            ordered=True,
+            root=self.config.data_dir,
+            train=True,
+            download=True,
+            **self.config.dataset_params,
+        )
         train_data_neg = contrastlib.SequentialMNIST(
-            ordered=False, root=self.config.data_dir, train=True,
-            download=True, **self.config.dataset_params)
+            ordered=False,
+            root=self.config.data_dir,
+            train=True,
+            download=True,
+            **self.config.dataset_params,
+        )
         test_data_pos = contrastlib.SequentialMNIST(
-            ordered=True, root=self.config.data_dir, train=False,
-            download=True, **self.config.dataset_params)
+            ordered=True,
+            root=self.config.data_dir,
+            train=False,
+            download=True,
+            **self.config.dataset_params,
+        )
         test_data_neg = contrastlib.SequentialMNIST(
-            ordered=False, root=self.config.data_dir, train=False,
-            download=True, **self.config.dataset_params)
+            ordered=False,
+            root=self.config.data_dir,
+            train=False,
+            download=True,
+            **self.config.dataset_params,
+        )
 
         # Params for GPU
         if torch.cuda.is_available():
@@ -143,18 +159,18 @@ class Trainer:
             kwargs = {}
 
         self.train_loader_pos = torch.utils.data.DataLoader(
-            train_data_pos, shuffle=True, batch_size=self.config.batch_size,
-            **kwargs)
+            train_data_pos, shuffle=True, batch_size=self.config.batch_size, **kwargs
+        )
         self.train_loader_neg = torch.utils.data.DataLoader(
-            train_data_neg, shuffle=True, batch_size=self.config.batch_size,
-            **kwargs)
+            train_data_neg, shuffle=True, batch_size=self.config.batch_size, **kwargs
+        )
 
         self.test_loader_pos = torch.utils.data.DataLoader(
-            test_data_pos, shuffle=False, batch_size=self.config.batch_size,
-            **kwargs)
+            test_data_pos, shuffle=False, batch_size=self.config.batch_size, **kwargs
+        )
         self.test_loader_neg = torch.utils.data.DataLoader(
-            test_data_neg, shuffle=True, batch_size=self.config.batch_size,
-            **kwargs)
+            test_data_neg, shuffle=True, batch_size=self.config.batch_size, **kwargs
+        )
 
         self.logger.info(f"Train dataset size: {len(self.train_loader_pos)}")
         self.logger.info(f"Test dataset size: {len(self.test_loader_pos)}")
@@ -162,8 +178,7 @@ class Trainer:
     def train(self) -> None:
         """Trains model."""
 
-        for (data_pos, _), (data_neg, _) in zip(self.train_loader_pos,
-                                                self.train_loader_neg):
+        for (data_pos, _), (data_neg, _) in zip(self.train_loader_pos, self.train_loader_neg):
             self.model.train()
 
             # Data to device
@@ -177,10 +192,8 @@ class Trainer:
 
             # Backward and update
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(
-                self.model.parameters(), self.config.max_grad_norm)
-            torch.nn.utils.clip_grad_value_(
-                self.model.parameters(), self.config.max_grad_value)
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config.max_grad_norm)
+            torch.nn.utils.clip_grad_value_(self.model.parameters(), self.config.max_grad_value)
             self.optimizer.step()
 
             # Progress bar update
@@ -192,8 +205,7 @@ class Trainer:
 
             # Summary
             for key, value in loss_dict.items():
-                self.writer.add_scalar(
-                    f"train/{key}", value.mean(), self.global_steps)
+                self.writer.add_scalar(f"train/{key}", value.mean(), self.global_steps)
 
             # Test
             if self.global_steps % self.config.test_interval == 0:
@@ -204,9 +216,7 @@ class Trainer:
                 self.save_checkpoint()
 
                 loss_logger = {k: v.mean() for k, v in loss_dict.items()}
-                self.logger.debug(
-                    f"Train loss (steps={self.global_steps}): "
-                    f"{loss_logger}")
+                self.logger.debug(f"Train loss (steps={self.global_steps}): " f"{loss_logger}")
 
             # Check step limit
             if self.global_steps >= self.config.max_steps:
@@ -220,8 +230,7 @@ class Trainer:
 
         # Run
         self.model.eval()
-        for (data_pos, _), (data_neg, _) in zip(self.test_loader_pos,
-                                                self.test_loader_neg):
+        for (data_pos, _), (data_neg, _) in zip(self.test_loader_pos, self.test_loader_neg):
             with torch.no_grad():
                 # Data to device
                 data_pos = data_pos.to(self.device)
@@ -242,11 +251,10 @@ class Trainer:
         # Summary
         for key, value in loss_logger.items():
             self.writer.add_scalar(
-                f"test/{key}", value / (len(self.test_loader_pos)),
-                self.global_steps)
+                f"test/{key}", value / (len(self.test_loader_pos)), self.global_steps
+            )
 
-        self.logger.debug(
-            f"Test loss (steps={self.global_steps}): {loss_logger}")
+        self.logger.debug(f"Test loss (steps={self.global_steps}): {loss_logger}")
 
     def save_checkpoint(self) -> None:
         """Saves trained model and optimizer to checkpoint file.
@@ -312,8 +320,7 @@ class Trainer:
         self.model = self.model.to(self.device)
 
         # Optimizer
-        self.optimizer = optim.Adam(
-            self.model.parameters(), **self.config.optimizer_params)
+        self.optimizer = optim.Adam(self.model.parameters(), **self.config.optimizer_params)
 
         # Progress bar
         self.pbar = tqdm.tqdm(total=self.config.max_steps)
